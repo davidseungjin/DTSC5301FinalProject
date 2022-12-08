@@ -1,6 +1,6 @@
 ---
 title: "Data Science in Medicine - Final Report"
-author: "Anjali Bari","David Lee","Keerthana Kesavan""Mohal Khandelwal","Rahul Chauhan","Sravani Rao Savaram"
+author: "Anjali Bari, David Lee, Keerthana Kesavan, Mohal Khandelwal, Rahul Chauhan, Sravani Rao Savaram"
 format: html
 editor: visual
 ---
