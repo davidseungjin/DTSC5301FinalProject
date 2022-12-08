@@ -10,6 +10,8 @@ https://raw.githubusercontent.com/davidseungjin/DTSC5301FinalProject/main/aw_fb_
 
 ## finalreport.Rmd
 RMD file
+https://raw.githubusercontent.com/davidseungjin/DTSC5301FinalProject/main/finalreport.Rmd
 
 ## finalreport.pdf
 knitted document from the RMD file
+https://github.com/davidseungjin/DTSC5301FinalProject/blob/main/finalreport.pdf
