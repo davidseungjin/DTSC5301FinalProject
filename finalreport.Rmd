@@ -1,0 +1,234 @@
+---
+title: "Data Science in Medicine - Final Report"
+author: "Anjali Bari","David Lee","Keerthana Kesavan""Mohal Khandelwal","Rahul Chauhan","Sravani Rao Savaram"
+format: html
+editor: visual
+---
+
+## Introduction
+
+Analyzing data to find patterns and trends that could be indicators of future occurrences is the process of predictive analytics. Predictive analytics can be used in the healthcare industry to forecast the likelihood of specific medical disorders or the likelihood that a patient will respond to a specific treatment. Predictive analytics uses methods from data mining, statistics and mathematical modeling to make future predictions about unknowable events. It creates forecasts using historical data. Healthcare practitioners can choose the finest therapies for patients and the most effective ways to customize those treatments to meet their unique needs by using predictive analytics. Additionally, patients who are at risk for complications or relapse can be identified using predictive healthcare analytics, and interventions can be given before issues arise. Predictive analytics has the ability to boost the effectiveness and quality of healthcare services overall.
+
+Wearable technology have been widely employed in the health industry for a variety of purposes, including patient care and personal health.The number of well-known consumer and medical devices that incorporate wearable sensor technologies has gradually increased. In situations involving the elderly, rehabilitation, and people with different disabilities, wearable devices can offer real-time input about a person's health problems. As a result, they can offer an objective alternative to manage and monitor the progression of chronic diseases. The vital indicators such as heart rate, blood pressure, and body temperature are the most often monitored data.
+
+## Data Collection
+
+The objective of this project is to determine whether commercial wearable technology can reliably forecast lying, sitting, and various other levels of physical activity. The dataset obtained was from Harvard Dataverse, An experiment was performed where a sample of 46 participants were taken, 26 of these were female. Three different types of devices used for the data are GENEActiv, an Apple Watch, and a Fitbit Charge. Each participant completed a 65-minute regimen that included 25 minutes of relaxing or resting and 40 total minutes on the treadmill. The amount of energy expended was measured using indirect calorimetry.
+
+## Source of the Data Set
+
+The given data set has been obtained from the [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/ZS2Z2J). Let's talk about the attributes of the data set obtained:
+
+1.  X1: Serial Number
+
+2.  Age: Age of every participant in the sample
+
+3.  Gender: Gender of every participant in the sample expressed in terms of "1" and "0" for "Male" and "Female" respectively.
+
+## Variables:
+
+-   **age**
+
+-   **gender :** Female & Male
+
+-   **height :** cm
+
+-   **weight :** kg
+
+-   **steps :** steps/mins
+
+-   **calories**
+
+-   **distance :** in meters
+
+-   **entropy_heart :** Heart rate entropy is used as a commonly used parameter to describe the regularity of the heart rate in the data set.
+
+-   **entropy_steps :** The entropy of steps is used as a commonly used parameter to describe the regularity of the steps in the data set.
+
+-   **resting_heart :** A normal resting heart rate for adults ranges from 60 to 100 beats per minute. Generally, a lower heart rate at rest implies more efficient heart function and better cardiovascular fitness.
+
+-   **corr_heart_steps :** Heart rate/step correlation;This column provides the relation between heart rate and steps for the particular activity.
+
+-   **intensity_karvonen :** The Karvonen formula is your heart rate reserve multiplied by the percentage of intensity plus your resting heart rate.
+
+-   **sd_norm_heart :** A standard deviation (or σ) is a measure of how dispersed the data is in relation to the mean.  
+
+-   **device:**Apple watch & Fitbit
+
+-   **activity:** Lying ,Running 3 METS , Running 5 METS ,Running 7 METS,Self Pace walk and Sitting.
+
+## Data Cleaning
+
+```{r, include = FALSE}
+library(reshape2)  ### for melt
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(curl)
+library(MASS)
+```
+
+```{r, echo = FALSE}
+
+
+participants_data<-read.csv("https://raw.githubusercontent.com/davidseungjin/DTSC5301FinalProject/main/aw_fb_data.csv")
+
+
+```
+
+Let's look at first few rows of our data frame:
+
+```{r}
+head(participants_data)
+```
+
+For the given data set we begin by removing some rows that contain too many (\\\>10%) NA values for both qualitative and quantitative variables. We also will remove duplicate columns.\
+
+Let's first look at the structure of our data frame:
+
+```{r}
+str(participants_data)
+summary(participants_data)
+```
+
+Let's look at the names of columns in our data frame and understand if they are in human readable format or not:
+
+```{r}
+colnames(participants_data)
+```
+
+As we can see, there are two column names that are X1 and hear_rate that doesn't make any sense, we will proceed to replace X1 with ID and hear_rate with heart_rate.
+
+```{r}
+names(participants_data)[2] <- 'ID'
+names(participants_data)[8] <- "heart_rate"
+names(participants_data)[12] <- "entropy_steps"
+```
+
+Let's look at it again:
+
+```{r}
+colnames(participants_data)
+#head(participants_data)
+```
+
+Checking for null values in our data frame
+
+```{r}
+sum(is.null(participants_data))
+```
+
+Let's take a look at the dimension of our data frame before removing any duplicate values:
+
+```{r}
+print(paste(c("Rows: ","Columns: "),dim(participants_data)))
+```
+
+After removing duplicate rows:
+
+```{r}
+new_participants_data<-distinct(participants_data)
+head(new_participants_data)
+print(paste(c("Rows: ","Columns: "),dim(new_participants_data)))
+```
+
+Since, we have "1" and "0" for our gender, for our ease we will change it to "Male" and "Female"
+
+```{r}
+new_participants_data$gender[new_participants_data$gender == 0] <- "Female"
+new_participants_data$gender[new_participants_data$gender == 1] <- "Male"
+
+tail(new_participants_data)
+```
+
+Segregating the participants who used Apple watch and Fit bit watch into two different data frames:
+
+```{r}
+participants_data_apple<-new_participants_data%>%group_by(device)%>%filter(device=="apple watch")
+participants_data_fitbit<-new_participants_data%>%group_by(device)%>%filter(device=="fitbit")
+```
+
+## EDA
+
+Let's explore a bit more in depth:
+
+Checking for outliers in different columns:
+
+```{r}
+par(mfrow=c(1,2))
+
+boxplot(new_participants_data$resting_heart,col="red", 
+        xlab = "Resting Heart rate",
+        horizontal = TRUE)
+
+boxplot(new_participants_data$heart_rate,col="blue",
+        xlab = "Heart rate",
+        horizontal = TRUE)
+
+boxplot(new_participants_data$calories,col="orange",
+        xlab = "Calories",
+        horizontal = TRUE)
+
+boxplot(new_participants_data$resting_heart,col="green",
+        xlab = "Entropy Heart rate",
+        horizontal = TRUE)
+
+```
+
+```{r}
+ggplot(new_participants_data, aes(x=height, y=weight, color=gender, shape=gender)) + 
+    geom_point(size=4) + 
+    labs(title='Height and weight according to Gender of participants')
+```
+
+From the above visualization, we can get insights on the height and weight of both Male and Female participants. We can extract the information that says Males in general have greater height and weight as compared to Females. In such case, we can assume a lot of things like, probably they will burn more calories while on treadmill. Yet, another assumption can be something like, they will have a greater heart rate and so on.
+
+*No gender based discrimination is intended.*
+
+```{r}
+ggplot(new_participants_data, aes(x=resting_heart, fill=gender)) + geom_density(alpha=0.7) + facet_wrap(~activity) +
+    labs(title='Resting heart rate of participants for different activities', 
+         x='Resting heart rate'
+        )
+```
+
+The above graphs showcases the heart rate of participants across various activities performed like Lying down, Sitting, running over treadmill for varying speed and so on. We can capture the insight that says female participants have much more heart rate as compared to male participants. Moreover, there are few that have heart rate closer to 0 which is practically not possible, so we can label them as outliers.
+
+```{r}
+ggplot(participants_data_apple, aes(x=heart_rate, y=intensity_karvonen,group_by(device) ,color=gender, shape=gender)) + 
+    geom_point(size=4) + 
+    facet_wrap(~activity) + 
+    labs(title='Heart rate and Intensity vs genre of participants')
+```
+
+```{r}
+new_participants_data$agegroup = cut(new_participants_data$age,c(15,25,35,45,55,65))
+head(new_participants_data)
+fem_data <- new_participants_data %>% filter(gender=='Female')
+ggplot(fem_data, aes(x=heart_rate, fill=agegroup)) + 
+    geom_density(alpha=0.7) +facet_wrap(~activity, scale='free') +
+    labs(title='Heart rate of female participants for different activities\n and different ages',
+         x='Heart rate'
+        )
+```
+
+```{r}
+ggplot(participants_data, aes(x = gender, 
+           fill = activity)) + 
+  geom_bar(position = "dodge")+
+  scale_fill_brewer(palette = "Paired")
+
+```
+
+We can observe that females wearer chose high MET activities over self-paced walks during the 40-minute treadmill protocol, and they subsequently chose to lay down rather than sit.
+
+## Bias
+
+The given data set taken from Harvard data verse contains data related to only 46 participants. Maybe, if we had more than 1000 participants, we would have reached a better conclusion. Moreover, there are various other activities as well that can be recorded in watches, such as rhythm (regular or irregular), ECG, Oxygen level etc. that can be used for further analysis. Moreover, sometimes the watches may not be 100% accurate, due to technical shortcomings giving us undesired results.
+
+## Conclusion
+
+To conclude,we can observe that the heart rate is consistent in both apple watch and fitbit for the different physical activities performed.We can also observe that the commercial watches concentrate more on features like heart rate ,steps and calories .We can also observe that there is increase in calories burnt depending on the activity for example running.This observation is crucial because all the parameters used in the smart watch is dependent on the calories parameter.Overall we can observe that females chose high MET activities over self-paced walks during the 40-minute treadmill protocol, and they subsequently chose to lay down rather than sit.
+
+We utilized different smartwatches in the visualizations to see how the smart watches behave based on our activities to conclude this study. Smartwatches are becoming more and more well-liked because of how convenient and portable they are. Many of them monitor their health using a single smart device to calculate calories, track their workout, and more. The smart watches tracks and alerts users for features like medication reminders, fall detection, and information on your heart rate, sleep, and location around-the-clock.
